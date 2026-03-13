@@ -1,0 +1,18 @@
+# Binaries
+bin/
+*.exe
+*.out
+
+# Go build artifacts
+*.test
+
+# Environment files
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
