@@ -7,10 +7,13 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"golang.org/x/sync/singleflight"
 )
 
 type AniListProvider struct {
 	cache *cache.Cache
+	group singleflight.Group
 }
 
 func New(cache *cache.Cache) *AniListProvider {
@@ -26,12 +29,21 @@ func (a *AniListProvider) Search(ctx context.Context, query string, page int, li
 		return cached.([]models.Anime), nil
 	}
 
-	result, err := services.SearchAnime(ctx, query, page, limit)
+	result, err, _ := a.group.Do(key, func() (interface{}, error) {
+		data, err := services.SearchAnime(ctx, query, page, limit)
+		if err != nil {
+			return nil, err
+		}
+		a.cache.Set(key, data, 5*time.Minute)
+		return data, nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
-	a.cache.Set(key, result, 5*time.Minute)
-	return result, nil
+
+	return result.([]models.Anime), nil
+
 }
 
 func (a *AniListProvider) GetByID(ctx context.Context, id int) (*models.AnimeDetail, error) {
@@ -41,10 +53,18 @@ func (a *AniListProvider) GetByID(ctx context.Context, id int) (*models.AnimeDet
 		return cached.(*models.AnimeDetail), nil
 	}
 
-	result, err := services.GetAnimeByID(ctx, id)
+	result, err, _ := a.group.Do(key, func() (interface{}, error) {
+		data, err := services.GetAnimeByID(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		a.cache.Set(key, data, 5*time.Minute)
+		return data, nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
-	a.cache.Set(key, result, 5*time.Minute)
-	return result, nil
+
+	return result.(*models.AnimeDetail), nil
 }
