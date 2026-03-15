@@ -19,6 +19,7 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
+	r.Use(middleware.RateLimiter())
 	c := cache.New()
 	provider := anilist.New(c)
 	animeHandler := handlers.NewAnimeHandler(provider)
