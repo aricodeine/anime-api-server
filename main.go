@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"anime-server/handlers"
 	"anime-server/providers/anilist"
@@ -27,6 +32,29 @@ func main() {
 	r.Get("/anime/search", animeHandler.SearchAnime)
 	r.Get("/anime/{id}", animeHandler.GetAnimeByID)
 
-	log.Println("Server running on http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	server := &http.Server{Addr: ":8080", Handler: r}
+
+	go func() {
+		log.Println("Starting server on http://localhost:8080")
+
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	<-stop
+
+	log.Println("Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatal("Server forced to shutdown:", err)
+	}
+
+	log.Println("Server exited properly")
 }
