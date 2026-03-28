@@ -23,7 +23,7 @@ func New(cache *cache.Cache) *AniListProvider {
 }
 
 func (a *AniListProvider) Search(ctx context.Context, query string, page int, limit int) ([]models.Anime, error) {
-	key := fmt.Sprintf("search:%s:%d:%d", query, page, limit)
+	key := fmt.Sprintf("search:anilist:%s:%d:%d", query, page, limit)
 
 	if cached, ok := a.cache.Get(key); ok {
 		return cached.([]models.Anime), nil
@@ -47,7 +47,7 @@ func (a *AniListProvider) Search(ctx context.Context, query string, page int, li
 }
 
 func (a *AniListProvider) GetByID(ctx context.Context, id int) (*models.AnimeDetail, error) {
-	key := fmt.Sprintf("anime:%d", id)
+	key := fmt.Sprintf("anime:anilist:%d", id)
 
 	if cached, ok := a.cache.Get(key); ok {
 		return cached.(*models.AnimeDetail), nil
