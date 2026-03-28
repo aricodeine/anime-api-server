@@ -11,6 +11,7 @@ import (
 
 	"anime-server/handlers"
 	"anime-server/providers/anilist"
+	"anime-server/providers/jikan"
 
 	"anime-server/internal/cache"
 	"anime-server/internal/middleware"
@@ -26,11 +27,19 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.RateLimiter())
 	c := cache.New()
-	provider := anilist.New(c)
-	animeHandler := handlers.NewAnimeHandler(provider)
+
+	//anilist
+	anilistProvider := anilist.New(c)
+	anilistHandler := handlers.NewAnimeHandler(anilistProvider)
+
+	//jikan
+	jikanProvider := jikan.New(c)
+	jikanHandler := handlers.NewAnimeHandler(jikanProvider)
 	// r.Get("/health", handlers.HealthCheck)
-	r.Get("/anime/search", animeHandler.SearchAnime)
-	r.Get("/anime/{id}", animeHandler.GetAnimeByID)
+	r.Get("/anilist/anime/search", anilistHandler.SearchAnime)
+	r.Get("/anilist/anime/{id}", anilistHandler.GetAnimeByID)
+	r.Get("/jikan/anime/search", jikanHandler.SearchAnime)
+	r.Get("/jikan/anime/{id}", jikanHandler.GetAnimeByID)
 
 	server := &http.Server{Addr: ":8080", Handler: r}
 
